@@ -1,0 +1,428 @@
+package main
+
+import "fmt"
+
+const NMAX int = 40
+
+/*
+Tipe bentukan struktur mahasiswa dengan atribut:
+	nama (string), matakuliah (string), dan nilai (real)
+*/
+type mahasiswa struct {
+	nama, matakuliah string
+	nilai            float64
+}
+
+type tabMhs [NMAX]mahasiswa
+
+func main() {
+	var dataMhs tabMhs
+	var n int
+	var rata float64
+	var nama, replaceName, replaceMatkul string
+	var replaceNilai float64
+	var pilih int
+
+	for {
+		fmt.Println("==============================")
+		fmt.Println("        Menu Utama       ")
+		fmt.Println("==============================")
+		fmt.Println("1. Tambah Mahasiswa")
+		fmt.Println("2. Menghitung Rata-rata")
+		fmt.Println("3. Nilai Tertinggi Mahasiswa")
+		fmt.Println("4. Edit Data Mahasiswa")
+		fmt.Println("5. Sort Nilai")
+		fmt.Println("6. Sort Nama")
+		fmt.Println("7. Sort Mata Kuliah")
+		fmt.Println("8. Hapus Data Mahasiswa")
+		fmt.Println("0. Keluar")
+		fmt.Println("===============================")
+		fmt.Print("Pilih menu: ")
+		fmt.Scan(&pilih)
+
+		if pilih == 1 {
+			fmt.Println("Masukkan data Nama, Matakuliah, Nilai. Ketik 'done' untuk selesai:")
+			tambahMahasiswa(&dataMhs, &n)
+		} else if pilih == 2 {
+			rata = hitungRata(&dataMhs, n)
+			fmt.Printf("Rata-rata nilai mahasiswa: %.2f\n", rata)
+		} else if pilih == 3 {
+			maxNilai, maxMhs := nilaiTertinggi(&dataMhs, n)
+			fmt.Printf("Nilai tertinggi: %.2f oleh %s\n", maxNilai, maxMhs)
+		} else if pilih == 4 {
+			fmt.Print("Masukkan nama mahasiswa yang ingin diedit: ")
+			var namaCari string
+			fmt.Scan(&namaCari)
+			idx := searchNama(dataMhs, n, namaCari)
+			if idx != -1 {
+				// Panggil fungsi editData di sini
+				fmt.Println("Data mahasiswa ditemukan. Silakan edit data", namaCari)
+				fmt.Print("Nama Sebelum Edit : ")
+				fmt.Scan(&nama)
+				fmt.Print("Edit Nama : ")
+				fmt.Scan(&replaceName)
+				fmt.Print("Edit Matkul : ")
+				fmt.Scan(&replaceMatkul)
+				fmt.Print("Edit Nilai : ")
+				fmt.Scan(&replaceNilai)
+				editData(&dataMhs, n, nama, replaceName, replaceMatkul, replaceNilai)
+				fmt.Println("Data berhasil diedit.")
+			} else {
+				fmt.Println("Data mahasiswa tidak ditemukan.")
+			}
+		} else if pilih == 5 {
+			fmt.Println("1. Urut Ascending")
+			fmt.Println("2. Urut Descending")
+			fmt.Print("Masukan Pilihan: ")
+			fmt.Scan(&pilih)
+			if pilih == 1 {
+				sortNilaiAsc(&dataMhs, n)
+				fmt.Println("Data mahasiswa diurutkan ascending berdasarkan nilai.")
+				printData(&dataMhs, n)
+			}else if pilih == 2 {
+				sortNilaiDesc(&dataMhs, n)
+				fmt.Println("Data mahasiswa diurutkan descending berdasarkan nilai.")
+				printData(&dataMhs, n)
+			}
+			
+		} else if pilih == 6 {
+			fmt.Println("1. Urut A - Z")
+			fmt.Println("2. Urut Z - A")
+			fmt.Print("Masukan Pilihan: ")
+			fmt.Scan(&pilih)
+			if pilih == 1 {
+				sortNamaAsc(&dataMhs, n)
+				fmt.Println("Data mahasiswa diurutkan berdasarkan nama dimulai dari A - Z.")
+				printData(&dataMhs, n)
+			}else if pilih == 2 {
+				sortNamaDesc(&dataMhs, n)
+				fmt.Println("Data mahasiswa diurutkan berdasarkan nama dimulai dari Z - A.")
+				printData(&dataMhs, n)
+			}
+			
+		} else if pilih == 7 {
+			sortMatkul(&dataMhs, n)
+			fmt.Println("Data mahasiswa diurutkan berdasarkan matakuliah.")
+			printData(&dataMhs, n)
+		} else if pilih == 8 {
+			fmt.Print("Masukkan nama mahasiswa yang ingin dihapus: ")
+			var namaHapus string
+			fmt.Scan(&namaHapus)
+			idx := searchNama(dataMhs, n, namaHapus)
+			if idx != -1 {
+				hapusData(&dataMhs, &n, idx)
+				fmt.Println("Data mahasiswa berhasil dihapus.")
+			}else {
+				fmt.Println("Data mahasiswa tidak ditemukan.")
+			}
+			
+		} else if pilih == 0 {
+			fmt.Println("Terima kasih")
+			return
+		} else {
+			fmt.Println("Pilihan tidak valid. Silakan pilih menu yang sesuai.")
+		}
+	}
+}
+
+func tambahMahasiswa(A *tabMhs, n *int) {
+	// Menambahkan data mahasiswa ke dalam array A
+	/*
+		IS: Terdefinisi array A dan n elemen
+		FS: Data mahasiswa baru ditambahkan ke dalam array A
+	*/
+	var nama, matakuliah string
+	var nilai float64
+	var selesai bool
+
+	for !selesai {
+		fmt.Print("Nama: ")
+		fmt.Scan(&nama)
+		if nama == "done" {
+			selesai = true
+		} else {
+			fmt.Print("Matakuliah: ")
+			fmt.Scan(&matakuliah)
+
+			fmt.Print("Nilai: ")
+			fmt.Scan(&nilai)
+
+			if *n < NMAX {
+				A[*n] = mahasiswa{nama, matakuliah, nilai}
+				*n++
+			} else {
+				fmt.Println("Data mahasiswa penuh.")
+				selesai = true
+			}
+		}
+	}
+}
+
+func hapusData(A *tabMhs, n *int, idx int) {
+	// Menghapus data mahasiswa pada index tertentu
+	/*
+		IS: Terdefinisi array A dan n elemen, idx adalah index mahasiswa yang ingin dihapus
+		FS: Data mahasiswa pada index idx dihapus dari array A
+	*/
+	if idx < 0 || idx >= *n {
+		fmt.Println("Data tidak ditemukan")
+		return
+	}
+
+	for i := idx; i < *n-1; i++ {
+		A[i] = A[i+1]
+	}
+	*n--
+}
+
+func editData(A *tabMhs, n int, nama string, replaceName string, replaceMatkul string, replaceNilai float64) {
+	// Mengedit data mahasiswa berdasarkan nama yang diberikan
+	/*
+		IS: Terdefinisi array A dan n elemen, nama adalah nama mahasiswa yang akan diedit,
+			replaceName, replaceMatkul, dan replaceNilai adalah data baru
+		FS: Data mahasiswa dengan nama yang diberikan diubah menjadi data baru
+	*/
+	var idx int
+
+	idx = searchNama(*A, n, nama)
+	if idx != -1 {
+		A[idx].nama = replaceName
+		A[idx].matakuliah = replaceMatkul
+		A[idx].nilai = replaceNilai
+	}
+}
+
+func hitungRata(A *tabMhs, n int) float64 {
+	// {mengembalikan rata-rata nilai mahasiswa}
+	if n == 0 {
+		return 0
+	}
+
+	total := 0.0
+	for i := 0; i < n; i++ {
+		total += A[i].nilai
+	}
+	return total / float64(n)
+}
+
+func nilaiTertinggi(A *tabMhs, n int) (float64, string) {
+	// mencari nilai tertinggi dan nama mahasiswa yang mendapatkannya
+	/* 
+		IS: Terdefinisi array A dan n elemen
+		FS: Mengembalikan nilai elemen nilai tertinggi dan nama mahasiswa yang mendapatkannya
+	 */
+	if n == 0 {
+		return 0, ""
+	}
+
+	 max := A[0].nilai
+	maxMhs := A[0].nama
+	for i := 1; i < n; i++ {
+		if A[i].nilai > max {
+			max = A[i].nilai
+			maxMhs = A[i].nama
+		}
+	}
+	return max, maxMhs
+}
+
+func sortNilaiAsc(A *tabMhs, n int) {
+	// mengurutkan data mahasiswa berdasarkan nilai secara ascending
+	/*
+		IS: terdefinisi array A dan n elemen
+		FS: Array A diurutkan berdasarkan nilai secara ascending
+	*/
+
+	//var pass, i, idx int
+	var temp mahasiswa
+
+	/*pass = 0
+	for pass < n-1 {
+		idx = pass
+		i = pass+1
+		for i < n {
+			if A[idx].nilai > A[i].nilai {
+				idx = i
+			}
+			i++
+		}
+		temp = A[idx]
+		A[idx] = A[pass]
+		A[pass] = temp
+		pass++
+	}*/
+	
+	
+
+	for i := 0; i < n-1; i++ {
+		minIndex := i
+		for j := i + 1; j < n; j++{
+			if A[j].nilai < A[minIndex].nilai {
+				minIndex = j
+			}
+		}
+		temp = A[minIndex]
+		A[minIndex] = A[i]
+		A[i] = temp
+		//A[i], A[minIndex] = A[minIndex], A[i]
+	}
+}
+
+func sortNilaiDesc(A *tabMhs, n int) {
+	// mengurutkan data mahasiswa berdasarkan nilai secara descending
+	/*
+		IS: terdefinisi array A dan n elemen
+		FS: Array A diurutkan berdasarkan nilai secara descending
+	*/
+
+	//var pass, i, idx int
+	var temp mahasiswa
+	
+	/*pass = 0
+	for pass < n-1 {
+		idx = pass
+		i = pass + 1
+		for i < n {
+			if A[idx].nilai < A[i].nilai {
+				idx = i
+			}
+			i++
+		}
+		temp = A[idx]
+		A[idx] = A[pass]
+		A[pass] = temp
+		pass++
+	}*/
+
+	for i := 0; i < n-1; i++ {
+		minIndex := i
+		for j := i + 1; j < n; j++{
+			if A[j].nilai > A[minIndex].nilai {
+				minIndex = j
+			}
+		}
+		temp = A[minIndex]
+		A[minIndex] = A[i]
+		A[i] = temp
+	}
+}
+
+func sortNamaAsc(A *tabMhs, n int) {
+	// mengurutkan data mahasiswa berdasarkan nama secara ascending
+	/*
+		IS: terdefinisi array A dan n elemen
+		FS: Array A diurutkan berdasarkan nama secara ascending
+	*/
+	
+	for i := 1; i < n; i++ {
+        temp := A[i]
+        j := i - 1
+        for j >= 0 && A[j].nama > temp.nama {
+            A[j + 1] = A[j]
+            j--
+        }
+        A[j + 1] = temp
+    }
+	
+}
+
+func sortNamaDesc(A *tabMhs, n int) {
+	// mengurutkan data mahasiswa berdasarkan nama secara descending
+	/*
+		IS: terdefinisi array A dan n elemen
+		FS: Array A diurutkan berdasarkan nama secara descending
+	*/
+	for i := 1; i < n; i++ {
+        temp := A[i]
+        j := i - 1
+        for j >= 0 && A[j].nama < temp.nama {
+            A[j + 1] = A[j]
+            j--
+        }
+        A[j + 1] = temp
+    }
+}
+
+func sortMatkul(A *tabMhs, n int) {
+	// mengurutkan data mahasiswa berdasarkan mata kuliah secara ascending
+	/*
+		IS: terdefinisi array A dan n elemen
+		FS: Array A diurutkan berdasarkan mata kuliah secara ascending
+	*/
+	var pass, i, idx int
+	var temp mahasiswa
+
+	for pass = 0; pass < n-1; pass++{
+		idx = pass
+		for i = pass + 1; i < n; i++{
+			if A[idx].matakuliah > A[i].matakuliah{
+				idx = i
+			}
+		}
+		temp = A[idx]
+		A[idx] = A[pass]
+		A[pass] = temp
+	}
+
+	/*for i := 0; i < n; i++ {
+		minIndex := i
+		for j := i + 1; j < n; j++{
+			if A[j].matakuliah < A[minIndex].matakuliah {
+				minIndex = j
+			}
+		}
+		A[i], A[minIndex] = A[minIndex], A[i]
+	}*/
+}
+
+func searchNama(A tabMhs, n int, nama string) int {
+	// mencari index dari mahasiswa berdasarkan nama yang diberikan
+	/* 
+		IS: Terdefinisi array A dan n elemen
+		FS: mengembalikan index dari mahasiswa dengan nama yang diberikan, -1 jika tidak ditemukan
+	*/
+	var left, right, mid int
+
+	sortNamaAsc(&A,n)
+
+	left = 0
+	right = n - 1
+	for left <= right {
+		mid = (left + right) / 2
+		if nama == A[mid].nama{
+			return mid
+		}else if nama < A[mid].nama{
+			right = mid -1
+		}else if nama > A[mid].nama{
+			left = mid + 1
+		}
+		
+	}
+	return -1
+
+	/*var i int
+	var idx int
+
+	idx = -1
+	for i = 0; i < n; i++ {
+		if A[i].nama == nama {
+			idx = i
+		}
+	}
+	return idx*/
+}
+
+func printData(A *tabMhs, n int) {
+	/*
+		IS: Terdefinisi array A sebanyak n elemen
+		FS: Tercetak di layar data array A dengan format
+			" Nama    Mata Kuliah       Nilai
+			 <Nama> <Mata Kuliah> <Nilai>
+			  ...	     ...		..."
+	*/
+	fmt.Printf("%-15s %-25s %-10s\n", "Nama", "Mata Kuliah", "Nilai")
+	for i := 0; i < n; i++ {
+		fmt.Printf("%-15s %-22s %8.2f\n", A[i].nama, A[i].matakuliah, A[i].nilai)
+	}
+	fmt.Println()
+}
